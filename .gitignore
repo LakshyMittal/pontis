@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+
+.chrome-live-preview/
+.chrome-test-profile/
+.chrome-test-profile-2/
+.chrome-test-profile-3/
+.chrome-v2-test/
+.chrome-v2-test-2/
+.chrome-v2-extension-only/
+.chrome-v2-extension-only/

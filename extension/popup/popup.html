@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pontis</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">pontis.in</p>
+          <h1>Pontis</h1>
+          <p class="subtitle">AI routing for real work.</p>
+        </div>
+        <div class="usage-pill">
+          <span>Free</span>
+          <strong id="usageCount">0 / 5</strong>
+        </div>
+      </header>
+
+      <div class="progress-dots" aria-label="Flow progress">
+        <span class="progress-dot active" data-progress="1"></span>
+        <span class="progress-dot" data-progress="2"></span>
+        <span class="progress-dot" data-progress="3"></span>
+        <span class="progress-dot" data-progress="4"></span>
+      </div>
+
+      <section class="message-banner hidden" id="limitBanner" aria-live="polite">
+        <strong>Daily free limit reached.</strong>
+        <span>You have used all 5 free recommendations today.</span>
+      </section>
+
+      <section class="message-banner hidden error" id="errorBanner" aria-live="polite">
+        <strong>Something went wrong.</strong>
+        <span id="errorMessage">The request could not be completed.</span>
+      </section>
+
+      <section class="screen active" data-screen="1">
+        <div class="card">
+          <p class="step-label">Step 1</p>
+          <h2>Who are you and what do you do?</h2>
+          <p class="card-copy">Type freely in your own words. Pontis will understand your world first, then ask two smarter questions.</p>
+          <label class="input-wrap" for="descriptionInput">
+            <textarea
+              id="descriptionInput"
+              rows="5"
+              placeholder="I am a chef trying to grow my food blog with better recipe content and short videos."
+            ></textarea>
+          </label>
+          <button id="understandButton" class="primary-btn" type="button">Understand me</button>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="2">
+        <div class="card">
+          <p class="step-label">Step 2</p>
+          <p class="persona-tag" id="personaSummary">Persona summary</p>
+          <h2 id="questionOneText">Question one</h2>
+          <div class="answer-grid" id="questionOneChips"></div>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="3">
+        <div class="card">
+          <p class="step-label">Step 3</p>
+          <p class="persona-tag" id="personaSummaryStepThree">Persona summary</p>
+          <h2 id="questionTwoText">Question two</h2>
+          <div class="answer-grid" id="questionTwoChips"></div>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="4">
+        <div class="card result-card">
+          <p class="step-label">Step 4</p>
+          <h2 id="resultTool">Best AI tool</h2>
+          <p class="card-copy" id="resultReason">Your recommendation will appear here.</p>
+          <pre id="promptOutput" class="prompt-output">Your Pontis context bridge prompt will appear here.</pre>
+          <button id="copyPromptButton" class="primary-btn" type="button">Copy prompt</button>
+          <p id="copyFeedback" class="copy-feedback" aria-live="polite"></p>
+        </div>
+
+        <div class="card">
+          <div class="section-row">
+            <h3>Also try</h3>
+            <a id="feedbackLink" href="https://tally.so/" target="_blank" rel="noreferrer">Share feedback</a>
+          </div>
+          <div class="alt-grid" id="alsoTryList"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-row">
+            <h3>Recent routes</h3>
+            <span id="usageResetText">Resets daily</span>
+          </div>
+          <ul class="history-list" id="historyList"></ul>
+        </div>
+      </section>
+
+      <section class="screen loading-screen" data-screen="loading">
+        <div class="card loading-card">
+          <p class="step-label">Pontis is thinking</p>
+          <h2 id="loadingTitle">Understanding your work</h2>
+          <div class="typing-dots" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <p class="card-copy" id="loadingSubtitle">Generating the next best question.</p>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        <button id="backButton" class="secondary-btn" type="button">Back</button>
+        <button id="restartButton" class="secondary-btn hidden" type="button">Start over</button>
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
