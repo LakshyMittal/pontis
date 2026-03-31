@@ -11,12 +11,8 @@ load_dotenv()
 
 app = FastAPI(title="Pontis API", version="2.0.0")
 
-allowed_origins = [
-    origin.strip()
-    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
-    if origin.strip()
-]
-origin_regex = os.getenv("CORS_ALLOW_ORIGIN_REGEX", r"chrome-extension://.*")
+allowed_origins = ["*"]
+origin_regex = None
 
 app.add_middleware(
     CORSMiddleware,
