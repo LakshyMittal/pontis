@@ -43,11 +43,27 @@ class RecommendRequest(BaseModel):
         return value
 
 
-class RecommendResponse(BaseModel):
+class WorkflowStep(BaseModel):
+    step: int
     tool: str
-    reason: str
+    purpose: str
+    instruction: str
     prompt: str
+
+
+class RecommendResponse(BaseModel):
+    workflow_title: str
+    workflow_tag: str
+    reason: str
+    workflow_steps: List[WorkflowStep]
     also_try: List[str]
+
+    @field_validator("workflow_steps")
+    @classmethod
+    def validate_workflow_steps(cls, value: List[WorkflowStep]) -> List[WorkflowStep]:
+        if len(value) < 2 or len(value) > 4:
+            raise ValueError("Workflow must contain between 2 and 4 steps.")
+        return value
 
     @field_validator("also_try")
     @classmethod
