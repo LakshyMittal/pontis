@@ -11,3 +11,5 @@ __pycache__/
 .chrome-v2-test-2/
 .chrome-v2-extension-only/
 .chrome-v2-extension-only/
+.chrome-flexibility-test/
+pontis-extension.zip
