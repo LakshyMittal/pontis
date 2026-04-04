@@ -15,6 +15,8 @@ def build_understand_prompt(description: str) -> str:
     return (
         f"The user described themselves as: {description}. "
         "Generate exactly 2 follow-up questions to understand their specific needs. "
+        "Make the questions broad and practical enough for real users, not overly narrow. "
+        "If the user likely needs multiple things, avoid forcing a too-specific framing. "
         "Each question must have exactly 4 short chip answers. "
         "Return ONLY valid JSON: "
         '{ "persona_summary": "...", "questions": [{"text": "...", "chips": ["...", "...", "...", "..."]}] }'

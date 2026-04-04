@@ -49,7 +49,16 @@
               placeholder="I am a chef trying to grow my food blog with better recipe content and short videos."
             ></textarea>
           </label>
+          <button id="usePageContextButton" class="secondary-btn" type="button">Use page context</button>
           <button id="understandButton" class="primary-btn" type="button">Understand me</button>
+        </div>
+
+        <div class="card">
+          <div class="section-row">
+            <h3>Saved workflows</h3>
+            <span id="savedWorkflowCount">0 saved</span>
+          </div>
+          <ul class="saved-workflow-list" id="savedWorkflowList"></ul>
         </div>
       </section>
 
@@ -58,7 +67,17 @@
           <p class="step-label">Step 2</p>
           <p class="persona-tag" id="personaSummary">Persona summary</p>
           <h2 id="questionOneText">Question one</h2>
+          <p class="card-copy">Pick the closest answer or tell Pontis what you actually mean.</p>
           <div class="answer-grid" id="questionOneChips"></div>
+          <div class="custom-answer-box hidden" id="questionOneCustomWrap">
+            <label class="custom-answer-label" for="questionOneCustomInput">Tell Pontis your real answer</label>
+            <textarea
+              id="questionOneCustomInput"
+              rows="3"
+              placeholder="Example: All subjects, but explain in easy language."
+            ></textarea>
+            <button id="questionOneCustomButton" class="primary-btn" type="button">Use this answer</button>
+          </div>
         </div>
       </section>
 
@@ -67,17 +86,32 @@
           <p class="step-label">Step 3</p>
           <p class="persona-tag" id="personaSummaryStepThree">Persona summary</p>
           <h2 id="questionTwoText">Question two</h2>
+          <p class="card-copy">Choose a chip if it fits, or type a custom answer if the chips miss your need.</p>
           <div class="answer-grid" id="questionTwoChips"></div>
+          <div class="custom-answer-box hidden" id="questionTwoCustomWrap">
+            <label class="custom-answer-label" for="questionTwoCustomInput">Tell Pontis your real answer</label>
+            <textarea
+              id="questionTwoCustomInput"
+              rows="3"
+              placeholder="Example: I want all of this, but make it simple and practical."
+            ></textarea>
+            <button id="questionTwoCustomButton" class="primary-btn" type="button">Use this answer</button>
+          </div>
         </div>
       </section>
 
       <section class="screen" data-screen="4">
         <div class="card result-card">
           <p class="step-label">Step 4</p>
-          <h2 id="resultTool">Best AI tool</h2>
-          <p class="card-copy" id="resultReason">Your recommendation will appear here.</p>
-          <pre id="promptOutput" class="prompt-output">Your Pontis context bridge prompt will appear here.</pre>
-          <button id="copyPromptButton" class="primary-btn" type="button">Copy prompt</button>
+          <div class="result-heading">
+            <div>
+              <h2 id="resultTitle">Best workflow</h2>
+              <p class="workflow-tag" id="resultTag">Workflow tag</p>
+            </div>
+            <button id="saveWorkflowButton" class="secondary-btn" type="button">Save workflow</button>
+          </div>
+          <p class="card-copy" id="resultReason">Your workflow recommendation will appear here.</p>
+          <div class="workflow-steps" id="workflowSteps"></div>
           <p id="copyFeedback" class="copy-feedback" aria-live="polite"></p>
         </div>
 

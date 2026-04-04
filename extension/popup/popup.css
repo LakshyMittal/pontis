@@ -30,7 +30,8 @@ body {
 
 .app-header,
 .section-row,
-.app-footer {
+.app-footer,
+.result-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -58,7 +59,9 @@ body {
 .card-copy,
 .message-banner span,
 .history-list span,
-#copyFeedback {
+#copyFeedback,
+.saved-workflow-list span,
+.workflow-tag {
   margin: 0;
   color: var(--text-secondary);
   font-size: 13px;
@@ -169,6 +172,11 @@ body {
   color: var(--text-secondary);
 }
 
+#usePageContextButton {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
 .secondary-btn:disabled,
 .primary-btn:disabled {
   opacity: 0.45;
@@ -181,6 +189,39 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 14px;
+}
+
+.custom-answer-box {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.custom-answer-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.custom-answer-box textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #111119;
+  color: var(--text);
+  padding: 12px;
+  font: inherit;
+}
+
+.custom-answer-box textarea::placeholder {
+  color: #7d7a72;
+}
+
+.custom-answer-box .primary-btn {
+  margin-top: 10px;
 }
 
 .answer-chip,
@@ -206,15 +247,7 @@ body {
 }
 
 .prompt-output {
-  margin: 14px 0 12px;
-  padding: 14px;
-  border-radius: 12px;
-  background: #101017;
-  border: 1px solid var(--border);
-  color: var(--text);
-  white-space: pre-wrap;
-  font-size: 12px;
-  line-height: 1.5;
+  margin: 10px 0 0;
 }
 
 .copy-feedback {
@@ -223,7 +256,9 @@ body {
   color: var(--success);
 }
 
-.history-list {
+.history-list,
+.saved-workflow-list,
+.workflow-steps {
   list-style: none;
   padding: 0;
   margin: 14px 0 0;
@@ -231,17 +266,87 @@ body {
   gap: 8px;
 }
 
-.history-list li {
+.history-list li,
+.saved-workflow-list li,
+.workflow-step {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #111119;
 }
 
-.history-list strong {
+.history-list strong,
+.saved-workflow-list strong,
+.workflow-step strong {
   display: block;
   margin-bottom: 4px;
   font-size: 13px;
+}
+
+.workflow-tag {
+  margin-top: 4px;
+  color: var(--success);
+  font-size: 12px;
+}
+
+.workflow-step-header,
+.saved-workflow-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.workflow-step p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.step-label-inline {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.workflow-prompt {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #101017;
+  color: var(--text);
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.step-copy-btn,
+.saved-run-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.step-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.saved-workflow-list {
+  margin-top: 12px;
+}
+
+.saved-workflow-list li {
+  display: grid;
+  gap: 8px;
 }
 
 .message-banner {

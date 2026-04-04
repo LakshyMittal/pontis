@@ -5,8 +5,9 @@
   "version": "1.0.0",
   "description": "Pontis helps professionals find the right AI workflow for their work.",
   "permissions": [
-    "storage",
-    "activeTab"
+    "activeTab",
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "https://chat.openai.com/*",
