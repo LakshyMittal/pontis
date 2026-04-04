@@ -111,6 +111,16 @@
             <button id="saveWorkflowButton" class="secondary-btn" type="button">Save workflow</button>
           </div>
           <p class="card-copy" id="resultReason">Your workflow recommendation will appear here.</p>
+          <div class="workflow-progress" id="workflowProgress">
+            <div>
+              <p class="progress-label">Progress</p>
+              <p class="progress-value" id="workflowProgressValue">0/0 complete</p>
+            </div>
+            <button id="resetWorkflowButton" class="secondary-btn" type="button">Reset workflow</button>
+          </div>
+          <div class="workflow-complete hidden" id="workflowCompleteBanner">
+            Workflow completed.
+          </div>
           <div class="workflow-steps" id="workflowSteps"></div>
           <p id="copyFeedback" class="copy-feedback" aria-live="polite"></p>
         </div>

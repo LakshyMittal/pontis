@@ -3,7 +3,8 @@ const STORAGE_KEYS = {
   history: "history",
   usage: "usage",
   savedWorkflows: "savedWorkflows",
-  metrics: "metrics"
+  metrics: "metrics",
+  workflowProgress: "workflowProgress"
 };
 const API_BASE_URL = "https://pontis-4bio.onrender.com";
 
@@ -17,17 +18,22 @@ const state = {
   answerKinds: ["", ""],
   customAnswers: ["", ""],
   recommendation: null,
+  activeWorkflowId: "",
   usage: {
     date: "",
     count: 0
   },
   history: [],
   savedWorkflows: [],
+  workflowProgress: {},
   metrics: {
     contextClicks: 0,
     manualStarts: 0,
     insertClicks: 0,
-    copyClicks: 0
+    copyClicks: 0,
+    workflow_started: 0,
+    step_completed: 0,
+    workflow_completed: 0
   },
   loading: false,
   loadingTitle: "Thinking",
@@ -54,6 +60,10 @@ const elements = {
   resultTitle: document.getElementById("resultTitle"),
   resultTag: document.getElementById("resultTag"),
   resultReason: document.getElementById("resultReason"),
+  workflowProgress: document.getElementById("workflowProgress"),
+  workflowProgressValue: document.getElementById("workflowProgressValue"),
+  workflowCompleteBanner: document.getElementById("workflowCompleteBanner"),
+  resetWorkflowButton: document.getElementById("resetWorkflowButton"),
   workflowSteps: document.getElementById("workflowSteps"),
   copyFeedback: document.getElementById("copyFeedback"),
   saveWorkflowButton: document.getElementById("saveWorkflowButton"),
@@ -125,6 +135,9 @@ function bindEvents() {
 
   elements.backButton.addEventListener("click", handleBack);
   elements.restartButton.addEventListener("click", restartFlow);
+  elements.resetWorkflowButton.addEventListener("click", () => {
+    void resetActiveWorkflow();
+  });
 }
 
 async function hydrateStorage() {
@@ -132,7 +145,8 @@ async function hydrateStorage() {
     STORAGE_KEYS.history,
     STORAGE_KEYS.usage,
     STORAGE_KEYS.savedWorkflows,
-    STORAGE_KEYS.metrics
+    STORAGE_KEYS.metrics,
+    STORAGE_KEYS.workflowProgress
   ]);
   state.history = Array.isArray(stored[STORAGE_KEYS.history]) ? stored[STORAGE_KEYS.history] : [];
   state.usage = normalizeUsage(stored[STORAGE_KEYS.usage]);
@@ -140,6 +154,7 @@ async function hydrateStorage() {
     ? stored[STORAGE_KEYS.savedWorkflows]
     : [];
   state.metrics = normalizeMetrics(stored[STORAGE_KEYS.metrics]);
+  state.workflowProgress = normalizeWorkflowProgress(stored[STORAGE_KEYS.workflowProgress]);
 
   await chrome.storage.local.set({
     [STORAGE_KEYS.usage]: state.usage
@@ -162,8 +177,33 @@ function normalizeMetrics(rawMetrics) {
     contextClicks: typeof rawMetrics.contextClicks === "number" ? rawMetrics.contextClicks : 0,
     manualStarts: typeof rawMetrics.manualStarts === "number" ? rawMetrics.manualStarts : 0,
     insertClicks: typeof rawMetrics.insertClicks === "number" ? rawMetrics.insertClicks : 0,
-    copyClicks: typeof rawMetrics.copyClicks === "number" ? rawMetrics.copyClicks : 0
+    copyClicks: typeof rawMetrics.copyClicks === "number" ? rawMetrics.copyClicks : 0,
+    workflow_started: typeof rawMetrics.workflow_started === "number" ? rawMetrics.workflow_started : 0,
+    step_completed: typeof rawMetrics.step_completed === "number" ? rawMetrics.step_completed : 0,
+    workflow_completed: typeof rawMetrics.workflow_completed === "number" ? rawMetrics.workflow_completed : 0
   };
+}
+
+function normalizeWorkflowProgress(rawProgress) {
+  if (!rawProgress || typeof rawProgress !== "object") {
+    return {};
+  }
+
+  const normalized = {};
+  Object.entries(rawProgress).forEach(([workflowId, value]) => {
+    if (!value || typeof value !== "object") {
+      return;
+    }
+    const completedSteps = Array.isArray(value.completedSteps)
+      ? value.completedSteps.filter((step) => Number.isFinite(step))
+      : [];
+    normalized[workflowId] = {
+      completedSteps,
+      startedAt: typeof value.startedAt === "string" ? value.startedAt : "",
+      completedAt: typeof value.completedAt === "string" ? value.completedAt : ""
+    };
+  });
+  return normalized;
 }
 
 async function bumpMetric(key) {
@@ -347,6 +387,7 @@ async function handleRecommend() {
 
     const payload = await response.json();
     state.recommendation = payload;
+    state.activeWorkflowId = `wf_${Date.now()}`;
     state.step = 4;
     await persistRoute(payload);
   } catch (error) {
@@ -412,6 +453,7 @@ function restartFlow() {
   state.answerKinds = ["", ""];
   state.customAnswers = ["", ""];
   state.recommendation = null;
+  state.activeWorkflowId = "";
   state.loading = false;
   state.error = "";
   state.loadingTitle = "Thinking";
@@ -448,6 +490,7 @@ function render() {
   elements.backButton.disabled = state.loading || state.step === 1;
   elements.restartButton.classList.toggle("hidden", state.step !== 4 || state.loading);
   elements.saveWorkflowButton.disabled = state.loading || !state.recommendation;
+  elements.resetWorkflowButton.disabled = state.loading || !state.recommendation;
 
   elements.loadingTitle.textContent = state.loadingTitle;
   elements.loadingSubtitle.textContent = state.loadingSubtitle;
@@ -476,6 +519,9 @@ function renderRecommendation() {
     elements.resultTitle.textContent = "Best workflow";
     elements.resultTag.textContent = "Workflow tag";
     elements.resultReason.textContent = "Your workflow recommendation will appear here.";
+    elements.workflowProgressValue.textContent = "0/0 complete";
+    elements.workflowProgress.classList.add("hidden");
+    elements.workflowCompleteBanner.classList.add("hidden");
     elements.workflowSteps.innerHTML = "";
     elements.alsoTryList.innerHTML = "";
     elements.copyFeedback.textContent = "";
@@ -485,11 +531,15 @@ function renderRecommendation() {
   const steps = Array.isArray(state.recommendation.workflow_steps)
     ? state.recommendation.workflow_steps
     : [];
+  const workflowId = state.activeWorkflowId;
+  const progress = ensureWorkflowProgress(workflowId);
+  const completedSteps = new Set(progress.completedSteps);
 
   elements.resultTitle.textContent = state.recommendation.workflow_title || "Best workflow";
   elements.resultTag.textContent = state.recommendation.workflow_tag || "Workflow";
   elements.resultReason.textContent = state.recommendation.reason;
   elements.workflowSteps.innerHTML = "";
+  elements.workflowProgress.classList.toggle("hidden", !steps.length);
 
   if (!steps.length) {
     const li = document.createElement("li");
@@ -502,6 +552,13 @@ function renderRecommendation() {
     li.appendChild(copy);
     elements.workflowSteps.appendChild(li);
   }
+
+  const progressText = `${Math.min(completedSteps.size, steps.length)}/${steps.length} complete`;
+  elements.workflowProgressValue.textContent = progressText;
+  elements.workflowCompleteBanner.classList.toggle(
+    "hidden",
+    !(steps.length && completedSteps.size >= steps.length)
+  );
 
   steps.forEach((workflowStep) => {
     const li = document.createElement("li");
@@ -531,8 +588,20 @@ function renderRecommendation() {
     insertButton.className = "step-copy-btn";
     insertButton.textContent = "Insert";
 
+    const checkLabel = document.createElement("label");
+    checkLabel.className = "step-check";
+    const checkInput = document.createElement("input");
+    checkInput.type = "checkbox";
+    checkInput.checked = completedSteps.has(workflowStep.step);
+    checkInput.addEventListener("change", () => {
+      void toggleStepCompletion(workflowId, workflowStep.step, checkInput.checked, steps.length);
+    });
+    checkLabel.appendChild(checkInput);
+    checkLabel.appendChild(document.createTextNode("Done"));
+
     actions.appendChild(copyButton);
     actions.appendChild(insertButton);
+    actions.appendChild(checkLabel);
 
     header.appendChild(headerText);
     header.appendChild(actions);
@@ -727,9 +796,84 @@ function runSavedWorkflow(workflowId) {
   state.answerKinds = ["", ""];
   state.customAnswers = ["", ""];
   state.recommendation = workflow.recommendation;
+  state.activeWorkflowId = workflow.id;
   state.step = 4;
   state.error = "";
   elements.descriptionInput.value = workflow.description;
+  render();
+}
+
+function ensureWorkflowProgress(workflowId) {
+  if (!workflowId) {
+    return { completedSteps: [], startedAt: "", completedAt: "" };
+  }
+
+  state.workflowProgress = normalizeWorkflowProgress(state.workflowProgress);
+  if (!state.workflowProgress[workflowId]) {
+    state.workflowProgress[workflowId] = {
+      completedSteps: [],
+      startedAt: new Date().toISOString(),
+      completedAt: ""
+    };
+    void bumpMetric("workflow_started");
+    void chrome.storage.local.set({
+      [STORAGE_KEYS.workflowProgress]: state.workflowProgress
+    });
+  }
+
+  return state.workflowProgress[workflowId];
+}
+
+async function toggleStepCompletion(workflowId, stepNumber, isComplete, totalSteps) {
+  if (!workflowId) {
+    return;
+  }
+
+  const progress = ensureWorkflowProgress(workflowId);
+  const completed = new Set(progress.completedSteps);
+  const wasComplete = completed.has(stepNumber);
+
+  if (isComplete) {
+    completed.add(stepNumber);
+    if (!wasComplete) {
+      await bumpMetric("step_completed");
+    }
+  } else {
+    completed.delete(stepNumber);
+  }
+
+  progress.completedSteps = Array.from(completed).sort((a, b) => a - b);
+  const allDone = totalSteps > 0 && completed.size >= totalSteps;
+  if (allDone && !progress.completedAt) {
+    progress.completedAt = new Date().toISOString();
+    await bumpMetric("workflow_completed");
+  }
+  if (!allDone) {
+    progress.completedAt = "";
+  }
+
+  state.workflowProgress[workflowId] = progress;
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.workflowProgress]: state.workflowProgress
+  });
+  render();
+}
+
+async function resetActiveWorkflow() {
+  const workflowId = state.activeWorkflowId;
+  if (!workflowId) {
+    return;
+  }
+
+  state.workflowProgress = normalizeWorkflowProgress(state.workflowProgress);
+  state.workflowProgress[workflowId] = {
+    completedSteps: [],
+    startedAt: new Date().toISOString(),
+    completedAt: ""
+  };
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.workflowProgress]: state.workflowProgress
+  });
   render();
 }
 
