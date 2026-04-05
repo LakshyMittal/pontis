@@ -38,13 +38,15 @@ const state = {
   loading: false,
   loadingTitle: "Thinking",
   loadingSubtitle: "Pontis is preparing the next step.",
-  error: ""
+  error: "",
+  lastAction: ""
 };
 
 const elements = {
   descriptionInput: document.getElementById("descriptionInput"),
   usePageContextButton: document.getElementById("usePageContextButton"),
   understandButton: document.getElementById("understandButton"),
+  retryButton: document.getElementById("retryButton"),
   questionOneText: document.getElementById("questionOneText"),
   questionOneChips: document.getElementById("questionOneChips"),
   questionOneCustomWrap: document.getElementById("questionOneCustomWrap"),
@@ -91,6 +93,7 @@ init().catch((error) => {
 async function init() {
   await hydrateStorage();
   bindEvents();
+  void warmBackend();
   render();
 }
 
@@ -138,6 +141,11 @@ function bindEvents() {
   elements.resetWorkflowButton.addEventListener("click", () => {
     void resetActiveWorkflow();
   });
+  if (elements.retryButton) {
+    elements.retryButton.addEventListener("click", () => {
+      void retryLastAction();
+    });
+  }
 }
 
 async function hydrateStorage() {
@@ -257,7 +265,8 @@ async function handleUnderstand() {
   render();
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/understand`, {
+    state.lastAction = "understand";
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/understand`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ description })
@@ -371,7 +380,8 @@ async function handleRecommend() {
   render();
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/recommend`, {
+    state.lastAction = "recommend";
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/recommend`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -458,6 +468,7 @@ function restartFlow() {
   state.error = "";
   state.loadingTitle = "Thinking";
   state.loadingSubtitle = "Pontis is preparing the next step.";
+  state.lastAction = "";
   elements.descriptionInput.value = "";
   elements.questionOneCustomInput.value = "";
   elements.questionTwoCustomInput.value = "";
@@ -472,6 +483,9 @@ function render() {
   elements.limitBanner.classList.toggle("hidden", !isLimitReached());
   elements.errorBanner.classList.toggle("hidden", !state.error);
   elements.errorMessage.textContent = state.error || "The request could not be completed.";
+  if (elements.retryButton) {
+    elements.retryButton.classList.toggle("hidden", !state.error);
+  }
 
   const screenKey = state.loading ? "loading" : String(state.step);
   elements.screens.forEach((screen) => {
@@ -971,7 +985,32 @@ async function insertIntoActivePage(text) {
         return false;
       };
 
+      const findEditableInShadow = (root) => {
+        if (!root) return null;
+        const queue = [root];
+        while (queue.length) {
+          const node = queue.shift();
+          if (!node) continue;
+          if (isEditable(node)) {
+            return node;
+          }
+          if (node.shadowRoot) {
+            queue.push(node.shadowRoot);
+          }
+          if (node.children && node.children.length) {
+            queue.push(...node.children);
+          }
+        }
+        return null;
+      };
+
       let target = document.activeElement;
+      if (!isEditable(target)) {
+        target = findEditableInShadow(document.activeElement);
+      }
+      if (!isEditable(target)) {
+        target = findEditableInShadow(document);
+      }
       if (!isEditable(target)) {
         target = document.querySelector(
           "textarea, [contenteditable='true'], [role='textbox'], input[type='text'], input[type='search'], input[type='email'], input[type='url']"
@@ -1012,6 +1051,50 @@ async function getErrorDetail(response) {
     return payload.detail || "";
   } catch (error) {
     return "";
+  }
+}
+
+function withTimeout(promise, timeoutMs) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error("Request timed out."));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  });
+}
+
+async function fetchWithTimeout(url, options) {
+  try {
+    return await withTimeout(fetch(url, options), 10000);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Request timed out.") {
+      throw new Error("This is taking longer than usual. Please try again.");
+    }
+    throw error;
+  }
+}
+
+async function retryLastAction() {
+  if (state.lastAction === "understand") {
+    await handleUnderstand();
+    return;
+  }
+  if (state.lastAction === "recommend") {
+    await handleRecommend();
+  }
+}
+
+async function warmBackend() {
+  try {
+    await fetch(`${API_BASE_URL}/health`, { method: "GET" });
+  } catch (error) {
+    // Ignore warm-up failures.
   }
 }
 

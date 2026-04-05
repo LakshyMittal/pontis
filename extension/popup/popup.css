@@ -416,6 +416,11 @@ body {
   color: var(--danger);
 }
 
+.message-banner .secondary-btn {
+  margin-top: 10px;
+  width: 100%;
+}
+
 .typing-dots {
   display: flex;
   gap: 8px;
